@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Heart Rain</title>
+
+<style>
+body{
+    margin:0;
+    overflow:hidden;
+    background:white;
+}
+canvas{
+    display:block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+/* Initial Cover Screen (စစချင်းပေါ်မည့် ပုံပါသော Screen) */
+#cover-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    cursor: pointer;
+}
+
+.cover-img {
+    width: 220px;
+    height: 220px;
+    object-fit: cover;
+    border-radius: 30px; /* တောင်းဆိုထားသည့် border radius */
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    margin-bottom: 20px;
+    transition: transform 0.3s ease;
+}
+
+.cover-img:hover {
+    transform: scale(1.05);
+}
+
+.cover-text {
+    color: #333;
+    font-size: 18px;
+    font-weight: bold;
+    font-family: Arial, sans-serif;
+}
+
+/* Floating Music Control Button (Top Right) */
+.music-btn {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    z-index: 9999;
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid #ff6699;
+    border-radius: 50px;
+    padding: 8px 16px;
+    font-size: 14px;
+    color: #ff6699;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    display: none; /* စစချင်း Cover ပေါ်နေစဉ် ဖျောက်ထားမည် */
+    align-items: center;
+    gap: 6px;
+    backdrop-filter: blur(5px);
+    outline: none;
+}
+
+.music-btn:hover {
+    transform: scale(1.05);
+}
+</style>
+</head>
+
+<body>
+
+<!-- စစချင်းပေါ်မည့် ပုံ (နှိပ်မှ Animation ဆီသို့သွားမည်) -->
+<div id="cover-screen" onclick="startExperience()">
+    <!-- a.jpg နေရာတွင် သင်ပြချင်သည့် ပုံဖိုင်နာမည်ကို ထည့်ပါ -->
+    <div class="cover-text">Click the Photo</div><br>
+    <img src="a.jpg" alt="Cover Image" class="cover-img">
+    <div class="cover-text">တုတ်တုတ်ကိုလွမ်းလား</div>
+
+</div>
+
+<!-- Floating Music Toggle Button -->
+<button class="music-btn" id="music-toggle-btn" onclick="toggleMusic()">
+    <span id="music-icon">🔇</span> <span id="music-status">Music Off</span>
+</button>
+
+<canvas id="canvas"></canvas>
+
+<!-- MUSIC -->
+<audio id="music" loop preload="auto">
+    <source src="ko.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+// Center text split into two lines
+const centerLine1 = "ကိုကိုရေ လွမ်းနေပြီ";
+const centerLine2 = "";
+
+const heartText = "ILoveYou";
+// အပေါ်ကျလာမည့်စာကို "ကိုကိုရေ လွမ်းနေပြီ" ဟု ပြောင်းထားပါသည်
+const rainText = "ကိုကိုရေ လွမ်းနေပြီ";
+
+const heartParticles = [];
+const rainDrops = [];
+let animationStarted = false;
+
+// ================= HEART =================
+function createHeart(){
+    heartParticles.length = 0;
+    for(let t = 0; t < Math.PI * 2; t += 0.08){
+        const x = 16 * Math.pow(Math.sin(t),3);
+        const y = -(
+            13 * Math.cos(t)
+            - 5 * Math.cos(2*t)
+            - 2 * Math.cos(3*t)
+            - Math.cos(4*t)
+        );
+        heartParticles.push({
+            x,
+            y,
+            offset: Math.random() * 10
+        });
+    }
+}
+
+// ================= RAIN =================
+const fontSize = 14; // စာသားအရှည်အတွက် font size ကို အနည်းငယ်ညှိပေးထားပါသည်
+let columns = Math.floor(canvas.width / 120); // စာကြောင်းအကွာအဝေးအတွက် တွက်ချက်မှု
+
+for(let i=0; i<columns; i++){
+    rainDrops[i] = Math.random() * -500;
+}
+
+// ================= ANIMATE =================
+function animate(){
+    if (!animationStarted) return;
+
+    ctx.fillStyle = "rgba(255,255,255,0.15)";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    // ===== RAIN (ကိုကိုရေ လွမ်းနေပြီ စာများ ကျလာခြင်း) =====
+    ctx.font = "bold 14px Arial";
+    ctx.fillStyle = "white";
+    ctx.shadowBlur = 0;
+
+    for(let i=0; i<rainDrops.length; i++){
+        const x = i * 140; // တစ်ကြောင်းချင်းစီ ကွာဟချက်
+        const y = rainDrops[i];
+        ctx.fillText(rainText, x, y);
+        rainDrops[i] += 2;
+        if(rainDrops[i] > canvas.height){
+            rainDrops[i] = Math.random() * -300;
+        }
+    }
+
+    // ===== HEART =====
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const scale = 13;
+
+    ctx.font = "bold 11px Arial";
+    ctx.fillStyle = "white";
+
+    heartParticles.forEach((p)=>{
+        const vib = Math.sin(Date.now()*0.008 + p.offset) * 1.5;
+        const x = centerX + p.x * scale + vib;
+        const y = centerY + p.y * scale + vib;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = "#ff6699";
+        ctx.fillText(heartText, x, y);
+    });
+
+    // ===== CENTER NAME (two lines, smaller) =====
+    ctx.font = "bold 22px Arial"; // reduced size
+    ctx.fillStyle = "white";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = "red";
+
+    const move = Math.sin(Date.now()*0.005) * 3;
+    const lineHeight = 34; // spacing between the two lines
+
+    ctx.fillText(centerLine1, centerX, centerY - (lineHeight/2) + move);
+    ctx.fillText(centerLine2, centerX, centerY + (lineHeight/2) + move);
+
+    requestAnimationFrame(animate);
+}
+
+createHeart();
+
+// ================= START EXPERIENCE ON CLICK =================
+const music = document.getElementById("music");
+const musicStatus = document.getElementById("music-status");
+const musicIcon = document.getElementById("music-icon");
+let isPlaying = false;
+
+function startExperience() {
+    const cover = document.getElementById("cover-screen");
+    cover.style.opacity = "0";
+    setTimeout(() => {
+        cover.style.display = "none";
+    }, 400);
+
+    // Music ခလုတ်ကို ပေါ်လာစေရန်
+    document.getElementById("music-toggle-btn").style.display = "flex";
+
+    // သီချင်းစတင်ဖွင့်ရန်
+    music.play().then(() => {
+        musicStatus.innerText = "Music On";
+        musicIcon.innerText = "🔊";
+        isPlaying = true;
+    }).catch(err => {
+        console.log("Audio play error:", err);
+    });
+
+    animationStarted = true;
+    animate();
+}
+
+// ================= MUSIC TOGGLE =================
+function toggleMusic() {
+    if (isPlaying) {
+        music.pause();
+        musicStatus.innerText = "Music Off";
+        musicIcon.innerText = "🔇";
+        isPlaying = false;
+    } else {
+        music.play().then(() => {
+            musicStatus.innerText = "Music On";
+            musicIcon.innerText = "🔊";
+            isPlaying = true;
+        }).catch(err => {
+            console.log(err);
+        });
+    }
+}
+
+// ================= RESIZE =================
+window.addEventListener("resize", ()=>{
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    columns = Math.floor(canvas.width / 120);
+    while(rainDrops.length < columns) rainDrops.push(Math.random() * -500);
+    while(rainDrops.length > columns) rainDrops.pop();
+});
+
+</script>
+
+</body>
+</html>
